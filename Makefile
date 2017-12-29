@@ -5,10 +5,11 @@
 helloworld: helloworld/createtest
 putrma: putrma/createtest
 getrma: getrma/createtest
+allreduce: allreduce/createtest
 
-all: helloworld putrma getrma collect putperf getperf
+all: helloworld putrma getrma allreduce putperf getperf
 
-.PHONY: helloworld putrma getrma collect perf
+.PHONY: helloworld putrma getrma allreduce putperf getperf
 
 clean: 
 	rm -rf *.mod *.out *.o
