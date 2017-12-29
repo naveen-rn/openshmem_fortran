@@ -97,8 +97,8 @@ module shmem
         subroutine c_shmem_int4_wait_until(ivar, cmp, cmp_val) &
                    bind(c, name="shmem_int_wait_until")
             use, intrinsic :: iso_c_binding, only:c_int
-            type(*)        :: ivar
-            integer(c_int) :: cmp, cmp_val
+            type(*),dimension(*) :: ivar
+            integer(c_int),value :: cmp, cmp_val
         end subroutine c_shmem_int4_wait_until
     end interface
 
@@ -187,7 +187,7 @@ contains
         use, intrinsic :: iso_fortran_env, only: int32
         use, intrinsic :: iso_c_binding, only:c_int
         
-        type(*),intent(in) :: ivar
+        type(*),dimension(*),intent(in) :: ivar
         integer,intent(in) :: cmp, cmp_val
         integer(int32)     :: c_cmp, c_cmp_val
         c_cmp     = cmp
