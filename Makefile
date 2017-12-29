@@ -1,5 +1,9 @@
-helloworld: shmem.f90 test/helloworld.f90
-	ftn shmem.f90 test/helloworld.f90 -o helloworld.out
+%/createtest:
+	ftn shmem.f90 test/$(@D).f90 -o $(@D).out
+
+# Functional verification
+helloworld: helloworld/createtest
+putrma: putrma/createtest
 
 all: helloworld putrma getrma collect putperf getperf
 
