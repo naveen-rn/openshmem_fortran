@@ -6,10 +6,11 @@ helloworld: helloworld/createtest
 putrma: putrma/createtest
 getrma: getrma/createtest
 allreduce: allreduce/createtest
+syncwait: syncwait/createtest
 
-all: helloworld putrma getrma allreduce putperf getperf
+all: helloworld putrma getrma allreduce syncwait 
 
-.PHONY: helloworld putrma getrma allreduce putperf getperf
+.PHONY: helloworld putrma getrma allreduce syncwait
 
 clean: 
 	rm -rf *.mod *.out *.o

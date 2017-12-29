@@ -1,4 +1,4 @@
-program putrma
+program allreduce
     use shmem
 
     implicit none
@@ -47,5 +47,5 @@ program putrma
     
     call shmem_finalize()
 
-end program putrma
+end program allreduce
 
