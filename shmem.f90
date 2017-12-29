@@ -1,5 +1,18 @@
 module shmem
     implicit none
+    
+    ! openshmem constants
+    integer,parameter :: SHMEM_SYNC_VALUE               = -3
+    integer,parameter :: SHMEM_SYNC_SIZE                = 64*2+20
+    integer,parameter :: SHMEM_REDUCE_SYNC_SIZE         = 64*2+20
+    integer,parameter :: SHMEM_REDUCE_MIN_WRKDATA_SIZE  = 64
+
+    integer,parameter :: SHMEM_CMP_EQ = 0
+    integer,parameter :: SHMEM_CMP_NE = 1
+    integer,parameter :: SHMEM_CMP_GT = 2
+    integer,parameter :: SHMEM_CMP_LE = 3
+    integer,parameter :: SHMEM_CMP_LT = 4
+    integer,parameter :: SHMEM_CMP_GE = 5
 
     ! -----         library setup routines      -----
     ! shmem_init
@@ -72,9 +85,9 @@ module shmem
                                            pSync)                       &
                    bind(c, name="shmem_int_sum_to_all")
             use, intrinsic :: iso_c_binding, only:c_int, c_long
-            type(*)        :: dest, src, pWrk, pSync
-            integer(c_int) :: nreduce
-            integer(c_int) :: PE_start, logPE_stride, PE_size
+            type(*),dimension(*) :: dest, src, pWrk, pSync
+            integer(c_int),value :: nreduce
+            integer(c_int),value :: PE_start, logPE_stride, PE_size
         end subroutine c_shmem_int4_sum_to_all
     end interface
 
@@ -98,7 +111,7 @@ module shmem
     end interface
 
 contains
-
+    ! openshmem routines
     subroutine shmem_init()
         call c_shmem_init()
     end subroutine shmem_init
@@ -155,11 +168,11 @@ contains
         use, intrinsic :: iso_fortran_env, only: int32
         use, intrinsic :: iso_c_binding, only:c_int
         
-        type(*),intent(in) :: dest, src, pwrk, psync
+        type(*),dimension(*),intent(in) :: dest, src, pwrk, psync
         integer,intent(in) :: nreduce
         integer,intent(in) :: pe_start, logpe_stride, pe_size
-        integer(int32)     :: c_nreduce 
-        integer(int32)     :: c_pe_start, c_logpe_stride, c_pe_size
+        integer(c_int)     :: c_nreduce 
+        integer(c_int)     :: c_pe_start, c_logpe_stride, c_pe_size
         c_nreduce      = nreduce
         c_pe_start     = pe_start
         c_logpe_stride = logpe_stride
