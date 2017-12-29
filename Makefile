@@ -4,6 +4,7 @@
 # Functional verification
 helloworld: helloworld/createtest
 putrma: putrma/createtest
+getrma: getrma/createtest
 
 all: helloworld putrma getrma collect putperf getperf
 
