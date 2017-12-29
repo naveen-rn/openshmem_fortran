@@ -1,5 +1,5 @@
-helloworld: shmem.f90 helloworld.f90
-	ftn shmem.f90 helloworld.f90 -o helloworld.out
+helloworld: shmem.f90 test/helloworld.f90
+	ftn shmem.f90 test/helloworld.f90 -o helloworld.out
 
 all: helloworld putrma getrma collect putperf getperf
 
