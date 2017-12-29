@@ -36,13 +36,13 @@ module shmem
 
     ! -----         blocking RMA routines       -----
     ! shmem_putmem
-    interface 
+    interface
         subroutine c_shmem_putmem(dest, src, nelems, pe) &
                    bind(c, name="shmem_putmem")
             use, intrinsic    :: iso_c_binding, only:c_int, c_size_t
-            type(*)           :: dest, src
-            integer(c_int)    :: pe
-            integer(c_size_t) :: nelems
+            type(*),dimension(*)    :: dest, src
+            integer(c_int),value    :: pe
+            integer(c_size_t),value :: nelems
         end subroutine c_shmem_putmem
     end interface
     
@@ -51,9 +51,9 @@ module shmem
         subroutine c_shmem_getmem(dest, src, nelems, pe) &
                    bind(c, name="shmem_getmem")
             use, intrinsic    :: iso_c_binding, only:c_int, c_size_t
-            type(*)           :: dest, src
-            integer(c_int)    :: pe
-            integer(c_size_t) :: nelems
+            type(*),dimension(*)    :: dest, src
+            integer(c_int),value    :: pe
+            integer(c_size_t),value :: nelems
         end subroutine c_shmem_getmem
     end interface
 
@@ -121,7 +121,7 @@ contains
         use, intrinsic :: iso_fortran_env, only:int32
         use, intrinsic :: iso_c_binding, only:c_int, c_size_t
 
-        type(*),intent(in)   :: dest, src
+        type(*),dimension(*),intent(in)   :: dest, src
         integer,intent(in)   :: nelems, pe
         integer(c_int)       :: c_pe
         integer(c_size_t)    :: c_nelems
@@ -135,7 +135,7 @@ contains
         use, intrinsic :: iso_fortran_env, only:int32
         use, intrinsic :: iso_c_binding, only:c_int, c_size_t
 
-        type(*),intent(in)   :: dest, src
+        type(*),dimension(*),intent(in)   :: dest, src
         integer,intent(in)   :: nelems, pe
         integer(c_int)       :: c_pe
         integer(c_size_t)    :: c_nelems
