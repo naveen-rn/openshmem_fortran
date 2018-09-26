@@ -70,6 +70,29 @@ module shmem
         end subroutine c_shmem_getmem
     end interface
 
+    ! -----         non-blocking RMA routines   -----
+    ! shmem_putmem_nbi
+    interface
+        subroutine c_shmem_putmem_nbi(dest, src, nelems, pe) &
+                   bind(c, name="shmem_putmem_nbi")
+            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t
+            type(*),dimension(*)    :: dest, src
+            integer(c_int),value    :: pe
+            integer(c_size_t),value :: nelems
+        end subroutine c_shmem_putmem_nbi
+    end interface
+
+    ! shmem_getmem_nbi
+    interface 
+        subroutine c_shmem_getmem_nbi(dest, src, nelems, pe) &
+                   bind(c, name="shmem_getmem_nbi")
+            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t
+            type(*),dimension(*)    :: dest, src
+            integer(c_int),value    :: pe
+            integer(c_size_t),value :: nelems
+        end subroutine c_shmem_getmem_nbi
+    end interface
+    
     ! -----         collectives                 -----
     ! shmem_barrier_all
     interface 
@@ -157,6 +180,34 @@ contains
 
         call c_shmem_getmem(dest, src, c_nelems, c_pe)
     end subroutine shmem_getmem
+
+    subroutine shmem_putmem_nbi(dest, src, nelems, pe) 
+        use, intrinsic :: iso_fortran_env, only:int32
+        use, intrinsic :: iso_c_binding, only:c_int, c_size_t
+
+        type(*),dimension(*),intent(in)   :: dest, src
+        integer,intent(in)   :: nelems, pe
+        integer(c_int)       :: c_pe
+        integer(c_size_t)    :: c_nelems
+        c_nelems = nelems
+        c_pe     = pe
+
+        call c_shmem_putmem_nbi(dest, src, c_nelems, c_pe)
+    end subroutine shmem_putmem_nbi
+
+    subroutine shmem_getmem_nbi(dest, src, nelems, pe)
+        use, intrinsic :: iso_fortran_env, only:int32
+        use, intrinsic :: iso_c_binding, only:c_int, c_size_t
+
+        type(*),dimension(*),intent(in)   :: dest, src
+        integer,intent(in)   :: nelems, pe
+        integer(c_int)       :: c_pe
+        integer(c_size_t)    :: c_nelems
+        c_nelems = nelems
+        c_pe     = pe
+
+        call c_shmem_getmem_nbi(dest, src, c_nelems, c_pe)
+    end subroutine shmem_getmem_nbi
 
     subroutine shmem_barrier_all() 
         call c_shmem_barrier_all()
