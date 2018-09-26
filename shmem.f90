@@ -126,6 +126,13 @@ module shmem
     end interface
 
     ! -----         memory ordering routines    -----
+    ! shmem_fence
+    interface 
+        subroutine c_shmem_fence() &
+                   bind(c, name="shmem_fence")
+        end subroutine c_shmem_fence
+    end interface
+
     ! shmem_quiet
     interface 
         subroutine c_shmem_quiet() &
@@ -246,6 +253,10 @@ contains
 
         call c_shmem_int4_wait_until(ivar, c_cmp, c_cmp_val)
     end subroutine shmem_int4_wait_until
+
+    subroutine shmem_fence() 
+        call c_shmem_fence()
+    end subroutine shmem_fence
 
     subroutine shmem_quiet() 
         call c_shmem_quiet()
