@@ -1,4 +1,5 @@
 module shmem
+    use,intrinsic :: iso_c_binding, only:c_ptr
     implicit none
     
     ! openshmem constants
@@ -13,6 +14,16 @@ module shmem
     integer,parameter :: SHMEM_CMP_LE = 3
     integer,parameter :: SHMEM_CMP_LT = 4
     integer,parameter :: SHMEM_CMP_GE = 5
+
+    ! -----         library setup routines      -----
+    ! context datatype
+    integer,parameter :: SHMEM_CTX_PRIVATE    = 1
+    integer,parameter :: SHMEM_CTX_SERIALIZED = 2
+    integer,parameter :: SHMEM_CTX_SHARED     = 4
+
+    type, bind(c) :: shmem_ctx_t
+        type(c_ptr) :: shmem_val
+    end type shmem_ctx_t
 
     ! -----         library setup routines      -----
     ! shmem_init
@@ -140,6 +151,28 @@ module shmem
         end subroutine c_shmem_quiet
     end interface
 
+    ! -----         context management routines -----
+    ! shmem_ctx_create
+    interface
+        function c_shmem_ctx_create(options, ctx) result(err) &
+                   bind(c, name="shmem_ctx_create")
+            use, intrinsic :: iso_c_binding, only:c_long,c_int,c_ptr
+            integer(c_long),intent(in),value :: options
+            type(c_ptr),intent(out) :: ctx
+            integer(c_int) :: err
+        end function c_shmem_ctx_create
+    end interface
+    
+    ! shmem_ctx_destroy
+    interface
+        subroutine c_shmem_ctx_destroy(ctx)  &
+                   bind(c, name="shmem_ctx_destroy")
+            use, intrinsic :: iso_c_binding, only:c_ptr
+            type(c_ptr),intent(in),value :: ctx
+        end subroutine c_shmem_ctx_destroy
+    end interface
+    
+
 contains
     ! openshmem routines
     subroutine shmem_init()
@@ -159,6 +192,27 @@ contains
         integer :: npes
         npes = c_shmem_n_pes()
     end function shmem_n_pes
+
+    function shmem_ctx_create(options, ctx) result(err)
+        use, intrinsic :: iso_fortran_env, only:int32
+        use, intrinsic :: iso_c_binding, only:c_long
+        
+        integer :: err
+        integer,intent(in) :: options
+        type(shmem_ctx_t),intent(out) :: ctx
+        integer(c_long) :: c_options
+        c_options = options
+
+        err = c_shmem_ctx_create(c_options, ctx%shmem_val)
+    end function shmem_ctx_create
+
+    subroutine shmem_ctx_destroy(ctx)
+        use, intrinsic :: iso_fortran_env, only:int32
+        use, intrinsic :: iso_c_binding, only:c_int, c_size_t
+        type(shmem_ctx_t),intent(in) :: ctx
+
+        call c_shmem_ctx_destroy(ctx%shmem_val)
+    end subroutine shmem_ctx_destroy
 
     subroutine shmem_putmem(dest, src, nelems, pe) 
         use, intrinsic :: iso_fortran_env, only:int32
