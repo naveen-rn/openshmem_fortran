@@ -1,4 +1,5 @@
 module shmem
+    use,intrinsic :: iso_c_binding, only:c_ptr
     implicit none
     
     ! openshmem constants
@@ -13,6 +14,19 @@ module shmem
     integer,parameter :: SHMEM_CMP_LE = 3
     integer,parameter :: SHMEM_CMP_LT = 4
     integer,parameter :: SHMEM_CMP_GE = 5
+
+    ! -----         library setup routines      -----
+    ! context datatype
+    integer,parameter :: SHMEM_CTX_PRIVATE    = 1
+    integer,parameter :: SHMEM_CTX_SERIALIZED = 2
+    integer,parameter :: SHMEM_CTX_SHARED     = 4
+
+    type, bind(c) :: shmem_ctx_t
+        type(c_ptr) :: shmem_val
+    end type shmem_ctx_t
+
+    type(shmem_ctx_t),bind(c, name="SHMEM_CTX_DEFAULT") :: SHMEM_CTX_DEFAULT
+    !DEC$ ATTRIBUTES ALIGN: 64 :: SHMEM_CTX_DEFAULT
 
     ! -----         library setup routines      -----
     ! shmem_init
@@ -50,46 +64,50 @@ module shmem
     ! -----         blocking RMA routines       -----
     ! shmem_putmem
     interface
-        subroutine c_shmem_putmem(dest, src, nelems, pe) &
-                   bind(c, name="shmem_putmem")
-            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t
+        subroutine c_shmem_putmem(ctx, dest, src, nelems, pe) &
+                   bind(c, name="shmem_ctx_putmem")
+            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t, c_ptr
             type(*),dimension(*)    :: dest, src
             integer(c_int),value    :: pe
             integer(c_size_t),value :: nelems
+            type(c_ptr),intent(in),value :: ctx
         end subroutine c_shmem_putmem
     end interface
     
     ! shmem_getmem
     interface 
-        subroutine c_shmem_getmem(dest, src, nelems, pe) &
-                   bind(c, name="shmem_getmem")
-            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t
+        subroutine c_shmem_getmem(ctx, dest, src, nelems, pe) &
+                   bind(c, name="shmem_ctx_getmem")
+            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t, c_ptr
             type(*),dimension(*)    :: dest, src
             integer(c_int),value    :: pe
             integer(c_size_t),value :: nelems
+            type(c_ptr),intent(in),value :: ctx
         end subroutine c_shmem_getmem
     end interface
 
     ! -----         non-blocking RMA routines   -----
     ! shmem_putmem_nbi
     interface
-        subroutine c_shmem_putmem_nbi(dest, src, nelems, pe) &
-                   bind(c, name="shmem_putmem_nbi")
-            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t
+        subroutine c_shmem_putmem_nbi(ctx, dest, src, nelems, pe) &
+                   bind(c, name="shmem_ctx_putmem_nbi")
+            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t, c_ptr
             type(*),dimension(*)    :: dest, src
             integer(c_int),value    :: pe
             integer(c_size_t),value :: nelems
+            type(c_ptr),intent(in),value :: ctx
         end subroutine c_shmem_putmem_nbi
     end interface
 
     ! shmem_getmem_nbi
     interface 
-        subroutine c_shmem_getmem_nbi(dest, src, nelems, pe) &
-                   bind(c, name="shmem_getmem_nbi")
-            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t
+        subroutine c_shmem_getmem_nbi(ctx, dest, src, nelems, pe) &
+                   bind(c, name="shmem_ctx_getmem_nbi")
+            use, intrinsic    :: iso_c_binding, only:c_int, c_size_t, c_ptr
             type(*),dimension(*)    :: dest, src
             integer(c_int),value    :: pe
             integer(c_size_t),value :: nelems
+            type(c_ptr),intent(in),value :: ctx
         end subroutine c_shmem_getmem_nbi
     end interface
     
@@ -128,17 +146,43 @@ module shmem
     ! -----         memory ordering routines    -----
     ! shmem_fence
     interface 
-        subroutine c_shmem_fence() &
-                   bind(c, name="shmem_fence")
+        subroutine c_shmem_fence(ctx) &
+                   bind(c, name="shmem_ctx_fence")
+            use, intrinsic :: iso_c_binding, only:c_ptr
+            type(c_ptr),intent(in),value :: ctx
         end subroutine c_shmem_fence
     end interface
 
     ! shmem_quiet
     interface 
-        subroutine c_shmem_quiet() &
-                   bind(c, name="shmem_quiet")
+        subroutine c_shmem_quiet(ctx) &
+                   bind(c, name="shmem_ctx_quiet")
+            use, intrinsic :: iso_c_binding, only:c_ptr
+            type(c_ptr),intent(in),value :: ctx
         end subroutine c_shmem_quiet
     end interface
+
+    ! -----         context management routines -----
+    ! shmem_ctx_create
+    interface
+        function c_shmem_ctx_create(options, ctx) result(err) &
+                   bind(c, name="shmem_ctx_create")
+            use, intrinsic :: iso_c_binding, only:c_long,c_int,c_ptr
+            integer(c_long),intent(in),value :: options
+            type(c_ptr),intent(out) :: ctx
+            integer(c_int) :: err
+        end function c_shmem_ctx_create
+    end interface
+    
+    ! shmem_ctx_destroy
+    interface
+        subroutine c_shmem_ctx_destroy(ctx)  &
+                   bind(c, name="shmem_ctx_destroy")
+            use, intrinsic :: iso_c_binding, only:c_ptr
+            type(c_ptr),intent(in),value :: ctx
+        end subroutine c_shmem_ctx_destroy
+    end interface
+    
 
 contains
     ! openshmem routines
@@ -160,7 +204,28 @@ contains
         npes = c_shmem_n_pes()
     end function shmem_n_pes
 
-    subroutine shmem_putmem(dest, src, nelems, pe) 
+    function shmem_ctx_create(options, ctx) result(err)
+        use, intrinsic :: iso_fortran_env, only:int32
+        use, intrinsic :: iso_c_binding, only:c_long
+        
+        integer :: err
+        integer,intent(in) :: options
+        type(shmem_ctx_t),intent(out) :: ctx
+        integer(c_long) :: c_options
+        c_options = options
+
+        err = c_shmem_ctx_create(c_options, ctx%shmem_val)
+    end function shmem_ctx_create
+
+    subroutine shmem_ctx_destroy(ctx)
+        use, intrinsic :: iso_fortran_env, only:int32
+        use, intrinsic :: iso_c_binding, only:c_int, c_size_t
+        type(shmem_ctx_t),intent(in) :: ctx
+
+        call c_shmem_ctx_destroy(ctx%shmem_val)
+    end subroutine shmem_ctx_destroy
+
+    subroutine shmem_putmem(dest, src, nelems, pe, ctx) 
         use, intrinsic :: iso_fortran_env, only:int32
         use, intrinsic :: iso_c_binding, only:c_int, c_size_t
 
@@ -168,13 +233,18 @@ contains
         integer,intent(in)   :: nelems, pe
         integer(c_int)       :: c_pe
         integer(c_size_t)    :: c_nelems
+        type(shmem_ctx_t),intent(in),optional :: ctx
         c_nelems = nelems
         c_pe     = pe
 
-        call c_shmem_putmem(dest, src, c_nelems, c_pe)
+        if (present(ctx)) then
+            call c_shmem_putmem(ctx%shmem_val, dest, src, c_nelems, c_pe)
+        else
+            call c_shmem_putmem(SHMEM_CTX_DEFAULT%shmem_val, dest, src, c_nelems, c_pe)
+        end if
     end subroutine shmem_putmem
 
-    subroutine shmem_getmem(dest, src, nelems, pe)
+    subroutine shmem_getmem(dest, src, nelems, pe, ctx)
         use, intrinsic :: iso_fortran_env, only:int32
         use, intrinsic :: iso_c_binding, only:c_int, c_size_t
 
@@ -182,13 +252,18 @@ contains
         integer,intent(in)   :: nelems, pe
         integer(c_int)       :: c_pe
         integer(c_size_t)    :: c_nelems
+        type(shmem_ctx_t),intent(in),optional :: ctx
         c_nelems = nelems
         c_pe     = pe
 
-        call c_shmem_getmem(dest, src, c_nelems, c_pe)
+        if (present(ctx)) then
+            call c_shmem_getmem(ctx%shmem_val, dest, src, c_nelems, c_pe)
+        else
+            call c_shmem_getmem(SHMEM_CTX_DEFAULT%shmem_val, dest, src, c_nelems, c_pe)
+        end if
     end subroutine shmem_getmem
 
-    subroutine shmem_putmem_nbi(dest, src, nelems, pe) 
+    subroutine shmem_putmem_nbi(dest, src, nelems, pe, ctx) 
         use, intrinsic :: iso_fortran_env, only:int32
         use, intrinsic :: iso_c_binding, only:c_int, c_size_t
 
@@ -196,13 +271,18 @@ contains
         integer,intent(in)   :: nelems, pe
         integer(c_int)       :: c_pe
         integer(c_size_t)    :: c_nelems
+        type(shmem_ctx_t),intent(in),optional :: ctx
         c_nelems = nelems
         c_pe     = pe
 
-        call c_shmem_putmem_nbi(dest, src, c_nelems, c_pe)
+        if (present(ctx)) then
+            call c_shmem_putmem_nbi(ctx%shmem_val, dest, src, c_nelems, c_pe)
+        else
+            call c_shmem_putmem_nbi(SHMEM_CTX_DEFAULT%shmem_val, dest, src, c_nelems, c_pe)
+        end if
     end subroutine shmem_putmem_nbi
 
-    subroutine shmem_getmem_nbi(dest, src, nelems, pe)
+    subroutine shmem_getmem_nbi(dest, src, nelems, pe, ctx)
         use, intrinsic :: iso_fortran_env, only:int32
         use, intrinsic :: iso_c_binding, only:c_int, c_size_t
 
@@ -210,10 +290,15 @@ contains
         integer,intent(in)   :: nelems, pe
         integer(c_int)       :: c_pe
         integer(c_size_t)    :: c_nelems
+        type(shmem_ctx_t),intent(in),optional :: ctx
         c_nelems = nelems
         c_pe     = pe
 
-        call c_shmem_getmem_nbi(dest, src, c_nelems, c_pe)
+        if (present(ctx)) then
+            call c_shmem_getmem_nbi(ctx%shmem_val, dest, src, c_nelems, c_pe)
+        else
+            call c_shmem_getmem_nbi(SHMEM_CTX_DEFAULT%shmem_val, dest, src, c_nelems, c_pe)
+        end if
     end subroutine shmem_getmem_nbi
 
     subroutine shmem_barrier_all() 
@@ -254,12 +339,22 @@ contains
         call c_shmem_int4_wait_until(ivar, c_cmp, c_cmp_val)
     end subroutine shmem_int4_wait_until
 
-    subroutine shmem_fence() 
-        call c_shmem_fence()
+    subroutine shmem_fence(ctx) 
+        type(shmem_ctx_t),intent(in),optional :: ctx
+        if(present(ctx)) then
+            call c_shmem_fence(ctx%shmem_val)
+        else
+            call c_shmem_fence(SHMEM_CTX_DEFAULT%shmem_val)
+        endif
     end subroutine shmem_fence
 
-    subroutine shmem_quiet() 
-        call c_shmem_quiet()
+    subroutine shmem_quiet(ctx) 
+        type(shmem_ctx_t),intent(in),optional :: ctx
+        if(present(ctx)) then
+            call c_shmem_quiet(ctx%shmem_val)
+        else
+            call c_shmem_quiet(SHMEM_CTX_DEFAULT%shmem_val)
+        endif
     end subroutine shmem_quiet
 
 end module shmem
